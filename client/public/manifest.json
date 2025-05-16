@@ -1,6 +1,6 @@
 {
   "short_name": "React App",
-  "name": "Create React App Sample",
+  "name": "Secure File Sharing App",
   "icons": [
     {
       "src": "favicon.ico",
@@ -18,8 +18,11 @@
       "sizes": "512x512"
     }
   ],
-  "start_url": ".",
+  "start_url": "./",
   "display": "standalone",
-  "theme_color": "#000000",
+  "theme_color": "#0a192f",
   "background_color": "#ffffff"
+  "orientation": "portrait",
+  "description": "Upload, share, and track downloads of files securely."
+
 }
