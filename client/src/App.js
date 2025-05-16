@@ -1,52 +1,80 @@
-import { useState, useEffect, useRef } from 'react';
+
+import React, { useState, useCallback } from 'react';
+import { useDropzone } from 'react-dropzone';
+import axios from 'axios';
 import './App.css';
-import { uploadFile } from './service/api';
 
 function App() {
-  const [file, setFile] = useState('');
-  const [result, setResult] = useState('');
+  const [file, setFile] = useState(null);
+  const [uploadUrl, setUploadUrl] = useState('');
+  const [error, setError] = useState('');
+  const [uploadProgress, setUploadProgress] = useState(0);
 
-  const fileInputRef = useRef();
+  const onDrop = useCallback((acceptedFiles) => {
+    setFile(acceptedFiles[0]);
+    setUploadUrl('');
+    setError('');
+    setUploadProgress(0);
+  }, []);
 
-  const url = 'https://i.pinimg.com/originals/16/46/24/1646243661201a0892cc4b1a64fcbacf.jpg';
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
 
-  useEffect(() => {
-    const getImage = async () => {
-      if (file) {
-        const data = new FormData();
-        data.append("name", file.name);
-        data.append("file", file);
+  const uploadFile = async () => {
+    if (!file) return setError('Please drop or select a file first.');
 
-        const response = await uploadFile(data);
-        setResult(response.path);
-      }
+    const data = new FormData();
+    data.append('file', file);
+
+    try {
+      const res = await axios.post('http://localhost:8000/upload', data, {
+        onUploadProgress: (progressEvent) => {
+          const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          setUploadProgress(percent);
+        },
+      });
+      setUploadUrl(res.data.path);
+    } catch (err) {
+      console.error(err);
+      setError('Upload failed. Try again.');
     }
-    getImage();
-  }, [file])
-
-  const onUploadClick = () => {
-    fileInputRef.current.click();
-  }
+  };
 
   return (
-    <div className='container'>
-      <img src={url} className='img' />
-      <div className='wrapper'>
-        <h1>Simple file sharing!</h1>
-        <p>Upload and share the download link.</p>
-        
-        <button onClick={() => onUploadClick()}>Upload</button>
-        <input
-          type="file"
-          ref={fileInputRef}
-          style={{ display: "none" }}
-          onChange={(e) => setFile(e.target.files[0])}
-        />
+    <div className="container">
+      <h1>🔐 File Sharing App</h1>
 
-        <a href={result} target='_blank'>{result}</a> 
+      <div {...getRootProps({ className: 'dropzone' })}>
+        <input {...getInputProps()} />
+        {isDragActive ? (
+          <p>Drop the file here...</p>
+        ) : (
+          <p>Drag and drop a file here, or click to select</p>
+        )}
       </div>
+
+      {file && <p className="filename">📁 {file.name}</p>}
+
+      <button onClick={uploadFile}>Upload</button>
+
+      {uploadProgress > 0 && uploadProgress < 100 && (
+        <div className="progress-bar-container">
+          <div className="progress-bar" style={{ width: `${uploadProgress}%` }}>
+            {uploadProgress}%
+          </div>
+        </div>
+      )}
+
+      {error && <p className="error">{error}</p>}
+
+      {uploadUrl && (
+        <div className="link-box">
+          <p>✅ File uploaded!</p>
+          <a href={uploadUrl} target="_blank" rel="noreferrer">{uploadUrl}</a>
+        </div>
+      )}
     </div>
   );
 }
+
 
 export default App;
